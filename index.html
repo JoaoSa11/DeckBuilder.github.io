@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magic: The Gathering Deckbuilder</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%236B21A8'/%3E%3Cpath d='M30 70 L30 30 L50 50 L70 30 L70 70' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -120,10 +120,12 @@
 
         let user_collection = [];
         let deck_cards = [];
+        let basic_lands = {};
         let scryfallApiCache = new Map();
         let recommendationsStore = new Map();
         let isCommanderSearched = false;
         let commanderColorIdentity = [];
+        const colorToLandMap = { 'W': 'Plains', 'U': 'Island', 'B': 'Swamp', 'R': 'Mountain', 'G': 'Forest' };
 
         // --- Lógica da Coleção ---
 
@@ -138,6 +140,7 @@
             collectionListDiv.innerHTML = '<p class="text-gray-500">Processando coleção... Isso pode levar um momento.</p>';
             isCommanderSearched = false;
             deck_cards = [];
+            basic_lands = {};
             renderDeck();
             recommendationsScrollContainer.innerHTML = '<p id="recommendations-placeholder" class="text-gray-500 col-span-full text-center">Aguardando busca...</p>';
 
@@ -302,6 +305,7 @@
             recommendationsScrollContainer.appendChild(recommendationsPlaceholder);
             
             deck_cards = [];
+            basic_lands = {};
             recommendationsStore.clear();
             isCommanderSearched = false;
             commanderColorIdentity = [];
@@ -313,6 +317,12 @@
                     throw new Error(`Comandante "${commanderName}" não encontrado.`);
                 }
                 commanderColorIdentity = commanderCardData.color_identity;
+                commanderColorIdentity.forEach(color => {
+                    const landName = colorToLandMap[color];
+                    if (landName) {
+                        basic_lands[landName] = 0;
+                    }
+                });
                 
                 const response = await fetch(`${backendUrl}/recommendations/${encodeURIComponent(commanderName)}`);
                 if (!response.ok) {
@@ -343,6 +353,7 @@
                 console.error('Erro ao buscar recomendações:', error);
                 recommendationsScrollContainer.innerHTML = `<p class="text-red-500 col-span-full text-center">${error.message}</p>`;
                 deck_cards = [];
+                basic_lands = {};
                 renderDeck();
                 isCommanderSearched = false;
                 renderCollection();
@@ -431,10 +442,14 @@
         }
 
         async function addCardToDeck(cardData, clickedElement = null) {
-            if (deck_cards.length >= 100) { alert("O deck já tem 100 cartas."); return; }
+            if (cardData.type_line.toLowerCase().includes('basic land')) {
+                alert('Para adicionar terrenos básicos, use os controles na seção "Deck".');
+                return;
+            }
+
+            if (getTotalDeckCount() >= 100) { alert("O deck já tem 100 cartas."); return; }
             const isAlreadyInDeck = deck_cards.some(card => card.id === cardData.id);
-            const isBasicLand = cardData.type_line.toLowerCase().includes('basic land');
-            if (isAlreadyInDeck && !isBasicLand) { console.log(`${cardData.name} já está no deck.`); return; }
+            if (isAlreadyInDeck) { console.log(`${cardData.name} já está no deck.`); return; }
             
             deck_cards.push(cardData);
             renderDeck();
@@ -593,17 +608,74 @@
                 }
             }
         }
+        
+        function getTotalDeckCount() {
+            const totalBasicLands = Object.values(basic_lands).reduce((sum, count) => sum + count, 0);
+            return deck_cards.length + totalBasicLands;
+        }
+
+        function changeBasicLandCount(landName, amount) {
+            const currentCount = basic_lands[landName];
+            
+            if (currentCount + amount < 0) return;
+
+            if (amount > 0 && getTotalDeckCount() >= 100) {
+                alert("O deck já tem 100 cartas.");
+                return;
+            }
+
+            basic_lands[landName] += amount;
+            renderDeck(); 
+        }
 
         function renderDeck() {
-            deckCountSpan.textContent = deck_cards.length;
+            deckCountSpan.textContent = getTotalDeckCount();
             deckListDiv.innerHTML = '';
+            
             if (deck_cards.length === 0) {
                 deckListDiv.innerHTML = '<p class="text-gray-500">Adicione cartas das recomendações.</p>';
                 return;
             }
 
+            // Renderiza os controles de terrenos básicos
+            if (Object.keys(basic_lands).length > 0) {
+                const manaDiv = document.createElement('div');
+                manaDiv.className = 'mb-4 p-3 bg-gray-700/50 rounded-lg';
+                const manaTitle = document.createElement('h4');
+                manaTitle.className = 'font-semibold text-gray-300 mb-2';
+                manaTitle.textContent = 'Terrenos Básicos';
+                manaDiv.appendChild(manaTitle);
+
+                for (const landName in basic_lands) {
+                    const controlDiv = document.createElement('div');
+                    controlDiv.className = 'flex justify-between items-center py-1';
+                    controlDiv.innerHTML = `
+                        <span class="text-sm">${landName}</span>
+                        <div class="flex items-center gap-3">
+                            <button class="bg-red-600 hover:bg-red-700 w-6 h-6 rounded-full font-bold text-lg flex items-center justify-center transition-colors">-</button>
+                            <span class="font-semibold w-6 text-center text-lg">${basic_lands[landName]}</span>
+                            <button class="bg-green-600 hover:bg-green-700 w-6 h-6 rounded-full font-bold text-lg flex items-center justify-center transition-colors">+</button>
+                        </div>
+                    `;
+                    controlDiv.querySelector('.bg-red-600').onclick = () => changeBasicLandCount(landName, -1);
+                    controlDiv.querySelector('.bg-green-600').onclick = () => changeBasicLandCount(landName, 1);
+                    manaDiv.appendChild(controlDiv);
+                }
+                deckListDiv.appendChild(manaDiv);
+            }
+
+            // Agrupa e renderiza as outras cartas
+            const other_cards = deck_cards.filter(c => c.id !== deck_cards[0].id); // Exclui o comandante para renderizá-lo separadamente
             const groupedDeck = { Creature: [], Instant: [], Sorcery: [], Artifact: [], Enchantment: [], Planeswalker: [], Land: [], Other: [] };
-            deck_cards.forEach(card => {
+            
+            // Adiciona o comandante primeiro
+            const commanderCard = deck_cards[0];
+            const commanderDiv = document.createElement('div');
+            commanderDiv.className = 'p-1.5 rounded-md flex justify-between items-center text-sm mb-3';
+            commanderDiv.innerHTML = `<span class="truncate font-bold text-yellow-400">${commanderCard.name} (C)</span>`;
+            deckListDiv.appendChild(commanderDiv);
+            
+            other_cards.forEach(card => {
                 const typeLine = card.type_line.toLowerCase();
                 if (typeLine.includes('creature')) groupedDeck.Creature.push(card);
                 else if (typeLine.includes('instant')) groupedDeck.Instant.push(card);
@@ -627,19 +699,12 @@
                     groupedDeck[group].sort((a, b) => a.name.localeCompare(b.name)).forEach(card => {
                         const cardDiv = document.createElement('div');
                         cardDiv.className = 'p-1.5 rounded-md hover:bg-gray-700 flex justify-between items-center text-sm';
-                        
-                        const isCommander = deck_cards.length > 0 && card.id === deck_cards[0].id;
-
-                        if (isCommander) {
-                            cardDiv.innerHTML = `<span class="truncate font-bold text-yellow-400">${card.name} (C)</span>`;
-                        } else {
-                            cardDiv.innerHTML = `<span class="truncate">${card.name}</span>`;
-                            const removeBtn = document.createElement('button');
-                            removeBtn.className = 'text-red-500 hover:text-red-400 font-bold ml-2 px-2';
-                            removeBtn.textContent = '×';
-                            removeBtn.onclick = () => removeCardFromDeck(card.id);
-                            cardDiv.appendChild(removeBtn);
-                        }
+                        cardDiv.innerHTML = `<span class="truncate">${card.name}</span>`;
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'text-red-500 hover:text-red-400 font-bold ml-2 px-2';
+                        removeBtn.textContent = '×';
+                        removeBtn.onclick = () => removeCardFromDeck(card.id);
+                        cardDiv.appendChild(removeBtn);
                         groupDiv.appendChild(cardDiv);
                     });
                     deckListDiv.appendChild(groupDiv);
