@@ -53,35 +53,35 @@
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-8">
             <h1 class="text-4xl md:text-5xl font-bold">Magic Deckbuilder</h1>
-            <p class="text-gray-400 mt-2">Find recommendations for your commander based on your collection.</p>
+            <p class="text-gray-400 mt-2">Encontre recomendações para seu comandante com base na sua coleção.</p>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-5 gap-8">
             <!-- Coluna da Coleção -->
             <div class="bg-gray-800 p-6 rounded-lg shadow-lg col-span-1 lg:col-span-1">
                 <h2 class="text-2xl font-semibold mb-4 border-b border-gray-600 pb-2 flex items-center">
-                    1. Your Collection
+                    1. Sua Coleção
                     <div id="collection-loader" class="loader hidden ml-4" style="width: 20px; height: 20px; border-width: 2px;"></div>
                 </h2>
                 <input type="file" id="collection-file-input" accept=".txt" class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer mb-4">
-                <input type="text" id="collection-search-input" placeholder="Search in your collection..." class="w-full bg-gray-700 text-white p-2 rounded-md mb-4 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="collection-search-input" placeholder="Buscar na sua coleção..." class="w-full bg-gray-700 text-white p-2 rounded-md mb-4 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <div id="collection-list" class="h-96 overflow-y-auto pr-2">
-                    <p class="text-gray-500">No collection loaded.</p>
+                    <p class="text-gray-500">Nenhuma coleção carregada.</p>
                 </div>
             </div>
 
             <!-- Coluna de Recomendações -->
             <div class="bg-gray-800 p-6 rounded-lg shadow-lg col-span-1 lg:col-span-2">
-                <h2 class="text-2xl font-semibold mb-4 border-b border-gray-600 pb-2">2. Search Recommendations</h2>
+                <h2 class="text-2xl font-semibold mb-4 border-b border-gray-600 pb-2">2. Buscar Recomendações</h2>
                 <div class="flex flex-col sm:flex-row gap-4 mb-4">
-                    <input type="text" id="commander-input" placeholder="Type your commander name" class="flex-grow bg-gray-700 text-white p-2 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="commander-input" placeholder="Digite o nome do comandante" class="flex-grow bg-gray-700 text-white p-2 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button id="fetch-recommendations-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 flex items-center justify-center">
-                        <span id="btn-text">Search</span>
+                        <span id="btn-text">Buscar</span>
                         <div id="btn-loader" class="loader hidden ml-2"></div>
                     </button>
                 </div>
                 <div id="recommendations-scroll-container" class="h-[30rem] overflow-y-auto p-2">
-                    <p id="recommendations-placeholder" class="text-gray-500 col-span-full text-center">Waiting for search...</p>
+                    <p id="recommendations-placeholder" class="text-gray-500 col-span-full text-center">Aguardando busca...</p>
                 </div>
             </div>
             
@@ -91,13 +91,19 @@
                     Deck (<span id="deck-count">0</span>/100)
                 </h2>
                 <div id="deck-list" class="h-[34.5rem] overflow-y-auto pr-2">
-                    <p class="text-gray-500">Add cards of recommendation.</p>
+                    <p class="text-gray-500">Adicione cartas das recomendações.</p>
                 </div>
             </div>
         </main>
     </div>
 
     <script>
+        // =========================================================================================
+        // IMPORTANTE: Após hospedar seu backend, cole a URL pública dele aqui dentro das aspas.
+        // Exemplo: const backendUrl = 'https://meu-deckbuilder-backend.onrender.com';
+        // =========================================================================================
+        const backendUrl = 'https://mtgdeckbuilder-iu6t.onrender.com'; // Mude esta linha quando tiver a URL!
+        
         const collectionFileInput = document.getElementById('collection-file-input');
         const collectionListDiv = document.getElementById('collection-list');
         const collectionSearchInput = document.getElementById('collection-search-input');
@@ -136,7 +142,7 @@
 
             const text = await file.text();
             const parsedCollection = parseManaBoxTxt(text);
-            console.log('Parsed collection:', parsedCollection.length, 'unique cards');
+            console.log('Coleção parseada:', parsedCollection.length, 'cartas únicas');
             await fetchCollectionData(parsedCollection);
             collectionLoader.classList.add('hidden');
             renderCollection();
@@ -157,12 +163,12 @@
                         body: JSON.stringify({ identifiers: chunk })
                     });
                     if (!response.ok) {
-                        console.error(`Error fetching data from collection for chunk ${i / CHUNK_SIZE}`);
+                        console.error(`Erro ao buscar dados da coleção para o chunk ${i / CHUNK_SIZE}`);
                         continue;
                     }
                     const result = await response.json();
                     if (result.not_found && result.not_found.length > 0) {
-                        console.warn('Scryfall did not find the following cards:', result.not_found.map(c => c.name));
+                        console.warn('Scryfall não encontrou as seguintes cartas:', result.not_found.map(c => c.name));
                     }
                     if (result.data && result.data.length > 0) {
                         const processedChunk = result.data.map(card => {
@@ -172,11 +178,11 @@
                         fullCollectionData.push(...processedChunk);
                     }
                 } catch (error) {
-                    console.error('Collection request failed:', error);
+                    console.error('Falha na requisição de coleção:', error);
                 }
             }
             user_collection = fullCollectionData;
-            console.log('Scryfall Enriched Collection Data:', user_collection);
+            console.log('Dados da coleção enriquecidos do Scryfall:', user_collection);
         }
         
         function parseManaBoxTxt(text) {
@@ -223,7 +229,7 @@
 
                 if (isCommanderSearched) {
                     cardDiv.className = 'p-2 rounded-md hover:bg-gray-700 flex justify-between items-center cursor-pointer group';
-                    cardDiv.title = `Add "${card.name}" to deck`;
+                    cardDiv.title = `Adicionar "${card.name}" ao deck`;
                     cardDiv.onclick = () => addCardFromCollectionToDeck(card.name);
                     
                     cardDiv.innerHTML = `
@@ -235,7 +241,7 @@
                     `;
                 } else {
                     cardDiv.className = 'p-2 rounded-md flex justify-between items-center cursor-not-allowed opacity-50';
-                    cardDiv.title = `Search for a commander to enable adding cards from the collection.`;
+                    cardDiv.title = `Busque um comandante para habilitar a adição de cartas da coleção.`;
                     
                     cardDiv.innerHTML = `
                         <span class="truncate">${card.name}</span>
@@ -286,12 +292,12 @@
 
         async function handleFetchRecommendations() {
             const commanderName = commanderInput.value.trim();
-            if (!commanderName) { alert('Please enter the name of a commander.'); return; }
-            if (user_collection.length === 0) { alert('Please upload your collection first.'); return; }
+            if (!commanderName) { alert('Por favor, digite o nome de um comandante.'); return; }
+            if (user_collection.length === 0) { alert('Por favor, carregue sua coleção primeiro.'); return; }
             
             setLoadingState(true);
             recommendationsScrollContainer.innerHTML = '';
-            recommendationsPlaceholder.textContent = 'Seeking commander and recommendations...';
+            recommendationsPlaceholder.textContent = 'Buscando comandante e recomendações...';
             recommendationsScrollContainer.appendChild(recommendationsPlaceholder);
             
             deck_cards = [];
@@ -303,14 +309,14 @@
             try {
                 const commanderCardData = await getScryfallData(commanderName);
                  if (!commanderCardData) {
-                    throw new Error(`Commander "${commanderName}" not found.`);
+                    throw new Error(`Comandante "${commanderName}" não encontrado.`);
                 }
                 commanderColorIdentity = commanderCardData.color_identity;
                 
-                const response = await fetch(`http://localhost:3000/recommendations/${encodeURIComponent(commanderName)}`);
+                const response = await fetch(`${backendUrl}/recommendations/${encodeURIComponent(commanderName)}`);
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error || `Request error: ${response.status}`);
+                    throw new Error(errorData.error || `Erro na requisição: ${response.status}`);
                 }
                 const recommendations = await response.json();
                 recommendationsStore.set(commanderCardData.id, recommendations);
@@ -333,7 +339,7 @@
                 renderCollection();
 
             } catch (error) {
-                console.error('Error fetching recommendations:', error);
+                console.error('Erro ao buscar recomendações:', error);
                 recommendationsScrollContainer.innerHTML = `<p class="text-red-500 col-span-full text-center">${error.message}</p>`;
                 deck_cards = [];
                 renderDeck();
@@ -350,12 +356,12 @@
             }
 
             if (cardList.length === 0 && isPrimary) {
-                recommendationsPlaceholder.textContent = 'No recommended cards (within color identity) were found in your collection.';
+                recommendationsPlaceholder.textContent = 'Nenhuma carta recomendada (dentro da identidade de cor) foi encontrada na sua coleção.';
                 recommendationsScrollContainer.appendChild(recommendationsPlaceholder);
                 return;
             }
             if (cardList.length === 0 && !isPrimary) {
-                console.log(`No new recommendations for "${legendData.name}" found in your collection.`);
+                console.log(`Nenhuma recomendação nova para "${legendData.name}" encontrada na sua coleção.`);
                 return;
             }
 
@@ -365,7 +371,7 @@
             
             const title = document.createElement('h3');
             title.className = 'text-xl font-semibold mb-3';
-            title.textContent = `Recommendations for ${legendData.name}`;
+            title.textContent = `Recomendações para ${legendData.name}`;
             sectionContainer.appendChild(title);
 
             const gridDiv = document.createElement('div');
@@ -386,7 +392,7 @@
         function createCardElement(cardName) {
             const container = document.createElement('div');
             container.className = 'card-image-container w-[150px] h-[209px] md:w-[180px] md:h-[251px] flex items-center justify-center bg-gray-700 rounded-lg overflow-hidden shadow-md cursor-pointer';
-            container.title = `Add "${cardName}" to deck`;
+            container.title = `Adicionar "${cardName}" ao deck`;
             container.innerHTML = `<div class="loader"></div>`;
             return container;
         }
@@ -407,16 +413,16 @@
         // --- Lógica do Deck ---
 
         async function addCardFromCollectionToDeck(cardName) {
-            console.log(`Trying to add "${cardName}" from the collection.`);
+            console.log(`Tentando adicionar "${cardName}" da coleção.`);
             const cardData = user_collection.find(card => card.name === cardName || card.name.split('//')[0].trim() === cardName);
             
             if (!cardData) {
-                alert(`Error: Could not find data for "${cardName}" in the local collection.`);
+                alert(`Erro: não foi possível encontrar os dados para "${cardName}" na coleção local.`);
                 return;
             }
             
             if (!isCardColorIdentityAllowed(cardData.color_identity, commanderColorIdentity)) {
-                alert(`The card "${cardData.name}" (${cardData.color_identity.join('')}) does not belong to the commander's color identity (${commanderColorIdentity.join('')}).`);
+                alert(`A carta "${cardData.name}" (${cardData.color_identity.join('')}) não pertence à identidade de cor do comandante (${commanderColorIdentity.join('')}).`);
                 return;
             }
             
@@ -424,10 +430,10 @@
         }
 
         async function addCardToDeck(cardData, clickedElement = null) {
-            if (deck_cards.length >= 100) { alert("The deck already has 100 cards."); return; }
+            if (deck_cards.length >= 100) { alert("O deck já tem 100 cartas."); return; }
             const isAlreadyInDeck = deck_cards.some(card => card.id === cardData.id);
             const isBasicLand = cardData.type_line.toLowerCase().includes('basic land');
-            if (isAlreadyInDeck && !isBasicLand) { console.log(`${cardData.name} is already on deck.`); return; }
+            if (isAlreadyInDeck && !isBasicLand) { console.log(`${cardData.name} já está no deck.`); return; }
             
             deck_cards.push(cardData);
             renderDeck();
@@ -453,7 +459,7 @@
             const remainingSections = recommendationsScrollContainer.querySelectorAll('div[id^="recs-for-"]');
             if (remainingSections.length === 0 && isCommanderSearched) {
                 recommendationsScrollContainer.innerHTML = '';
-                recommendationsPlaceholder.textContent = 'All recommendations have been added to the deck.';
+                recommendationsPlaceholder.textContent = 'Todas as recomendações foram adicionadas ao deck.';
                 recommendationsScrollContainer.appendChild(recommendationsPlaceholder);
             }
 
@@ -462,16 +468,16 @@
             const isCommander = deck_cards.length > 0 && cardData.id === deck_cards[0].id;
 
             if (isLegendaryCreature && !isCommander) {
-                console.log(`Legendary creature added: ${cardData.name}. Seeking secondary recommendations.`);
+                console.log(`Criatura lendária adicionada: ${cardData.name}. Buscando recomendações secundárias.`);
                 await fetchSecondaryRecommendations(cardData);
             }
         }
 
         async function fetchSecondaryRecommendations(legendCardData) {
             try {
-                const response = await fetch(`http://localhost:3000/recommendations/${encodeURIComponent(legendCardData.name)}`);
+                const response = await fetch(`${backendUrl}/recommendations/${encodeURIComponent(legendCardData.name)}`);
                 if (!response.ok) {
-                    console.error(`Unable to search for secondary recommendations for ${legendCardData.name}`);
+                    console.error(`Não foi possível buscar recomendações secundárias para ${legendCardData.name}`);
                     return;
                 }
                 const newRecs = await response.json();
@@ -490,13 +496,13 @@
                 const finalRecNames = colorFilteredCards.map(card => card.name.split('//')[0].trim());
 
                 if (finalRecNames.length > 0) {
-                    console.log(`Adding ${finalRecNames.length} new recommendations for ${legendCardData.name}.`);
+                    console.log(`Adicionando ${finalRecNames.length} novas recomendações para ${legendCardData.name}.`);
                     renderRecommendations(legendCardData, finalRecNames, false);
                 } else {
-                    console.log(`No new recommendations for "${legendCardData.name}" found in your collection.`);
+                    console.log(`Nenhuma recomendação nova para "${legendCardData.name}" encontrada na sua coleção.`);
                 }
             } catch (error) {
-                console.error(`Error fetching secondary recommendations for ${legendCardData.name}:`, error);
+                console.error(`Erro ao buscar recomendações secundárias para ${legendCardData.name}:`, error);
             }
         }
 
@@ -520,20 +526,21 @@
                 
                 const cardSimpleName = removedCard.name.split('//')[0].trim();
                 
-                // Lógica para adicionar a carta de volta a TODAS as listas de recomendações relevantes
-                const legendsInDeckWithRecs = deck_cards.filter(c => recommendationsStore.has(c.id));
-                if (deck_cards.length > 0 && recommendationsStore.has(deck_cards[0].id)) {
-                     if (!legendsInDeckWithRecs.some(l => l.id === deck_cards[0].id)) {
-                        legendsInDeckWithRecs.unshift(deck_cards[0]);
+                const legendsWithRecs = Array.from(recommendationsStore.keys());
+                const allLegendsInDeckOrCommander = [ ...deck_cards.filter(c => c.type_line.toLowerCase().includes('legendary')), deck_cards[0] ].filter(Boolean);
+                
+                const relevantLegendIds = new Set(allLegendsInDeckOrCommander.map(l => l.id));
+
+                for (const legendId of legendsWithRecs) {
+                    const legendData = user_collection.find(c => c.id === legendId) || deck_cards.find(c => c.id === legendId);
+                    if (legendData && relevantLegendIds.has(legendData.id)) {
+                        const originalRecs = recommendationsStore.get(legendData.id);
+                        if (originalRecs && originalRecs.includes(cardSimpleName)) {
+                            addCardBackToRecommendations(legendData, cardSimpleName);
+                        }
                     }
                 }
 
-                for (const legendData of legendsInDeckWithRecs) {
-                    const originalRecs = recommendationsStore.get(legendData.id);
-                    if (originalRecs && originalRecs.includes(cardSimpleName)) {
-                        addCardBackToRecommendations(legendData, cardSimpleName);
-                    }
-                }
                 
                 const remainingRecs = recommendationsScrollContainer.querySelector('img');
                 if (!remainingRecs && isCommanderSearched) {
@@ -653,4 +660,3 @@
     </script>
 </body>
 </html>
-
