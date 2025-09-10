@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magic: The Gathering Deckbuilder</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%236B21A8'/%3E%3Cpath d='M30 70 L30 30 L50 50 L70 30 L70 70' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%236B21A8'/%3E%3Cpath d='M30 70 L30 30 L50 50 L70 30 L70 70' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E">
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -88,10 +88,13 @@
             
             <!-- Coluna do Deck -->
             <div class="bg-gray-800 p-6 rounded-lg shadow-lg col-span-1 lg:col-span-2">
-                 <h2 class="text-2xl font-semibold mb-4 border-b border-gray-600 pb-2">
-                    Deck (<span id="deck-count">0</span>/100)
-                </h2>
-                <div id="deck-list" class="h-[34.5rem] overflow-y-auto pr-2">
+                 <div class="flex justify-between items-center border-b border-gray-600 pb-2 mb-4">
+                    <h2 class="text-2xl font-semibold">
+                        Deck (<span id="deck-count">0</span>/100)
+                    </h2>
+                    <button id="download-deck-btn" class="hidden bg-green-600 hover:bg-green-700 text-white font-bold py-1 px-3 rounded-md transition-all text-sm">Baixar .txt</button>
+                </div>
+                <div id="deck-list" class="h-[32rem] overflow-y-auto pr-2">
                     <p class="text-gray-500">Adicione cartas das recomendações.</p>
                 </div>
             </div>
@@ -101,7 +104,7 @@
     <script>
         // =========================================================================================
         // IMPORTANTE: Após hospedar seu backend, cole a URL pública dele aqui dentro das aspas.
-        // Exemplo: const backendUrl = 'https://meu-deckbuilder-backend.onrender.com';
+        // Exemplo: const backendUrl = '[https://meu-deckbuilder-backend.onrender.com](https://meu-deckbuilder-backend.onrender.com)';
         // =========================================================================================
         const backendUrl = 'https://mtgdeckbuilder-iu6t.onrender.com'; // Mude esta linha quando tiver a URL!
         
@@ -117,6 +120,7 @@
         const deckListDiv = document.getElementById('deck-list');
         const deckCountSpan = document.getElementById('deck-count');
         const collectionLoader = document.getElementById('collection-loader');
+        const downloadDeckBtn = document.getElementById('download-deck-btn');
 
         let user_collection = [];
         let deck_cards = [];
@@ -131,6 +135,7 @@
 
         collectionFileInput.addEventListener('change', handleFileSelect);
         collectionSearchInput.addEventListener('input', () => renderCollection());
+        downloadDeckBtn.addEventListener('click', downloadDecklist);
         
         async function handleFileSelect(event) {
             const file = event.target.files[0];
@@ -413,7 +418,7 @@
             try {
                 const cardData = await getScryfallData(cardName);
                 if (!cardData) throw new Error('Card not found');
-                const imageUrl = cardData.image_uris?.normal || 'https://placehold.co/220x307/1f2937/718096?text=No+Image';
+                const imageUrl = cardData.image_uris?.normal || '[https://placehold.co/220x307/1f2937/718096?text=No+Image](https://placehold.co/220x307/1f2937/718096?text=No+Image)';
                 element.innerHTML = `<img src="${imageUrl}" alt="${cardName}" class="card-image w-full h-full object-cover" loading="lazy">`;
                 element.onclick = () => addCardToDeck(cardData, element);
             } catch (error) {
@@ -627,9 +632,51 @@
             basic_lands[landName] += amount;
             renderDeck(); 
         }
+        
+        function downloadDecklist() {
+            if (getTotalDeckCount() !== 100) {
+                alert('O deck precisa ter exatamente 100 cartas para ser baixado.');
+                return;
+            }
+
+            const decklistMap = new Map();
+
+            deck_cards.forEach(card => {
+                const cardName = card.name.split('//')[0].trim();
+                decklistMap.set(cardName, (decklistMap.get(cardName) || 0) + 1);
+            });
+
+            for (const landName in basic_lands) {
+                 if (basic_lands[landName] > 0) {
+                    decklistMap.set(landName, (decklistMap.get(landName) || 0) + basic_lands[landName]);
+                 }
+            }
+
+            const sortedDecklist = Array.from(decklistMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+            const fileContent = sortedDecklist.map(([name, quantity]) => `${quantity} ${name}`).join('\n');
+
+            const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const commanderName = deck_cards.length > 0 ? deck_cards[0].name.split('//')[0].trim().replace(/[\s,]/g, '_') : 'deck';
+            a.download = `${commanderName}_decklist.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
 
         function renderDeck() {
-            deckCountSpan.textContent = getTotalDeckCount();
+            const totalCount = getTotalDeckCount();
+            deckCountSpan.textContent = totalCount;
+
+            if (totalCount === 100) {
+                downloadDeckBtn.classList.remove('hidden');
+            } else {
+                downloadDeckBtn.classList.add('hidden');
+            }
+            
             deckListDiv.innerHTML = '';
             
             if (deck_cards.length === 0) {
@@ -665,7 +712,7 @@
             }
 
             // Agrupa e renderiza as outras cartas
-            const other_cards = deck_cards.filter(c => c.id !== deck_cards[0].id); // Exclui o comandante para renderizá-lo separadamente
+            const other_cards = deck_cards.slice(1); // Exclui o comandante para renderizá-lo separadamente
             const groupedDeck = { Creature: [], Instant: [], Sorcery: [], Artifact: [], Enchantment: [], Planeswalker: [], Land: [], Other: [] };
             
             // Adiciona o comandante primeiro
