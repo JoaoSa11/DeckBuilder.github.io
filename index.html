@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Magic: The Gathering Deckbuilder</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%236B21A8'/%3E%3Cpath d='M30 70 L30 30 L50 50 L70 30 L70 70' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E">
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
-    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%236B21A8'/%3E%3Cpath d='M30 70 L30 30 L50 50 L70 30 L70 70' stroke='white' stroke-width='10' fill='none'/%3E%3C/svg%3E">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -104,7 +104,7 @@
     <script>
         // =========================================================================================
         // IMPORTANTE: Após hospedar seu backend, cole a URL pública dele aqui dentro das aspas.
-        // Exemplo: const backendUrl = '[https://meu-deckbuilder-backend.onrender.com](https://meu-deckbuilder-backend.onrender.com)';
+        // Exemplo: const backendUrl = 'https://meu-deckbuilder-backend.onrender.com';
         // =========================================================================================
         const backendUrl = 'https://mtgdeckbuilder-iu6t.onrender.com'; // Mude esta linha quando tiver a URL!
         
@@ -418,7 +418,7 @@
             try {
                 const cardData = await getScryfallData(cardName);
                 if (!cardData) throw new Error('Card not found');
-                const imageUrl = cardData.image_uris?.normal || '[https://placehold.co/220x307/1f2937/718096?text=No+Image](https://placehold.co/220x307/1f2937/718096?text=No+Image)';
+                const imageUrl = cardData.image_uris?.normal || 'https://placehold.co/220x307/1f2937/718096?text=No+Image';
                 element.innerHTML = `<img src="${imageUrl}" alt="${cardName}" class="card-image w-full h-full object-cover" loading="lazy">`;
                 element.onclick = () => addCardToDeck(cardData, element);
             } catch (error) {
